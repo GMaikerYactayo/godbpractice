@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+	_ "github.com/lib/pq"
 	"log"
 	"sync"
 )
@@ -16,14 +17,14 @@ func NewPostgresDB() {
 	once.Do(func() {
 		var err error
 		db, err = sql.Open("postgres", "postgresql://"+
-			"postgres:password@localhost:5432/db_practice?sslmode=disabled")
+			"postgres:password@localhost:5432/db_practice?sslmode=disable")
 		if err != nil {
 			log.Fatalf("Can´t open db: %v", err)
 		}
 		if err := db.Ping(); err != nil {
 			log.Fatalf("Can´t do ping: %v", err)
 		}
-		fmt.Println("Connected to postgres ")
+		fmt.Println("Connected to postgres")
 	})
 }
 
