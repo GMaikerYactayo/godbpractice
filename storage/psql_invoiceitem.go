@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+	"github.com/GMaikerYactayo/godbpractice/pkg/invoiceitem"
 )
 
 const (
@@ -18,9 +19,12 @@ const (
         CONSTRAINT invoice_items_product_id_fk FOREIGN KEY(product_id)
         REFERENCES products (id) ON UPDATE RESTRICT ON DELETE RESTRICT
 	)`
+
+	psqlCreateInvoiceItem = `INSERT INTO invoice_items(invoice_header_id, product_id)
+		VALUES($1, $2) RETURNING id, create_at `
 )
 
-// PsqlInvoiceItem used for work with postgres - invoiceItem
+// PsqlInvoiceItem used for work with postgres - invoiceitem
 type PsqlInvoiceItem struct {
 	db *sql.DB
 }
@@ -30,7 +34,7 @@ func NewPsqlInvoiceItem(db *sql.DB) *PsqlInvoiceItem {
 	return &PsqlInvoiceItem{db}
 }
 
-// Migrate implement the interface invoiceItem.Storage
+// Migrate implement the interface invoiceitem.Storage
 func (p *PsqlInvoiceItem) Migrate() error {
 	stmt, err := p.db.Prepare(psqlMigrateInvoiceItem)
 	if err != nil {
@@ -43,5 +47,25 @@ func (p *PsqlInvoiceItem) Migrate() error {
 		return err
 	}
 	fmt.Println("InvoiceItem migration successfully executed")
+	return nil
+}
+
+// CreateTx implement the interface invoiceitem.Storage
+func (p *PsqlInvoiceItem) CreateTx(tx *sql.Tx, headerID uint, ms invoiceitem.Models) error {
+	stmt, err := tx.Prepare(psqlCreateInvoiceItem)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, item := range ms {
+		err := stmt.QueryRow(headerID, item.ProductID).Scan(
+			&item.ID,
+			&item.CreateAt,
+		)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

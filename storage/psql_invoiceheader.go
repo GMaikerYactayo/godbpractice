@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+	"github.com/GMaikerYactayo/godbpractice/pkg/invoiceheader"
 )
 
 const (
@@ -13,9 +14,12 @@ const (
 		updated_at TIMESTAMP,
     	CONSTRAINT invoice_headers_id_pk PRIMARY KEY (id)
 	)`
+
+	psqlCreateInvoiceHeader = `INSERT INTO invoice_headers(client)
+		VALUES($1) RETURNING id, create_at `
 )
 
-// PsqlInvoiceHeader used for work with postgres - invoiceHeader
+// PsqlInvoiceHeader used for work with postgres - invoiceheader
 type PsqlInvoiceHeader struct {
 	db *sql.DB
 }
@@ -25,7 +29,7 @@ func NewPsqlInvoiceHeader(db *sql.DB) *PsqlInvoiceHeader {
 	return &PsqlInvoiceHeader{db}
 }
 
-// Migrate implement the interface invoiceHeader.Storage
+// Migrate implement the interface invoiceheader.Storage
 func (p *PsqlInvoiceHeader) Migrate() error {
 	stmt, err := p.db.Prepare(psqlMigrateInvoiceHeader)
 	if err != nil {
@@ -39,4 +43,16 @@ func (p *PsqlInvoiceHeader) Migrate() error {
 	}
 	fmt.Println("InvoiceHeader migration successfully executed")
 	return nil
+}
+
+// CreateTx implement the interface invoiceheader.Storage
+func (p *PsqlInvoiceHeader) CreateTx(tx *sql.Tx, m *invoiceheader.Model) error {
+	stmt, err := tx.Prepare(psqlCreateInvoiceHeader)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	return stmt.QueryRow(m.Client).Scan(&m.ID, &m.CreateAt)
+
 }
