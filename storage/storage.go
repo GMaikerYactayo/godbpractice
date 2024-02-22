@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 	"log"
 	"sync"
@@ -26,6 +27,21 @@ func NewPostgresDB() {
 			log.Fatalf("Can´t do ping: %v", err)
 		}
 		fmt.Println("Connected to postgres")
+	})
+}
+
+// NewMySqlDB connection to MySQL
+func NewMySqlDB() {
+	once.Do(func() {
+		var err error
+		db, err = sql.Open("mysql", "root:root@tcp(localhost:3306)/db_practice?charset=utf8&parseTime=true")
+		if err != nil {
+			log.Fatalf("Can´t open db: %v", err)
+		}
+		if err := db.Ping(); err != nil {
+			log.Fatalf("Can´t do ping: %v", err)
+		}
+		fmt.Println("Connected to mysql")
 	})
 }
 
