@@ -5,23 +5,26 @@ import (
 	"github.com/GMaikerYactayo/godbpractice/pkg/product"
 	"github.com/GMaikerYactayo/godbpractice/storage"
 	"log"
+	"time"
 )
 
 func main() {
-	storage.NewMySqlDB()
+	driver := storage.MySQL
 
-	storageProduct := storage.NewMySQLProduct(storage.Pool())
-	serviceProduct := product.NewService(storageProduct)
+	storage.New(driver)
 
-	m := &product.Model{
-		Name:         "Umbrella",
-		Observations: "Plastic",
-		Price:        20,
+	myStorage, err := storage.DAOProduct(driver)
+	if err != nil {
+		log.Fatalf("DAOProduct: %v", err)
 	}
-	if err := serviceProduct.Create(m); err != nil {
-		log.Fatalf("product.Create: %v", err)
+	serviceProduct := product.NewService(myStorage)
+
+	ms, err := serviceProduct.GetAll()
+	if err != nil {
+		log.Fatalf("product.GetAll: %v", err)
 	}
-
-	fmt.Printf("%+v\n", m)
-
+	for _, m := range ms {
+		fmt.Printf("ID: %d, Name: %s, Observations: %s, Price: %d, CreateAt: %s, UpdatedAt: %s\n",
+			m.ID, m.Name, m.Observations, m.Price, m.CreateAt.Format(time.RFC822), m.UpdateAt.Format(time.RFC822))
+	}
 }

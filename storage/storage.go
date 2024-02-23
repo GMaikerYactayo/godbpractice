@@ -3,6 +3,7 @@ package storage
 import (
 	"database/sql"
 	"fmt"
+	"github.com/GMaikerYactayo/godbpractice/pkg/product"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 	"log"
@@ -10,12 +11,30 @@ import (
 	"time"
 )
 
+// Driver of Storage
+type Driver string
+
+// Drivers
+const (
+	MySQL    Driver = "MYSQL"
+	Postgres Driver = "POSTGRES"
+)
+
 var (
 	db   *sql.DB
 	once sync.Once
 )
 
-func NewPostgresDB() {
+func New(d Driver) {
+	switch d {
+	case MySQL:
+		newMySqlDB()
+	case Postgres:
+		newPostgresDB()
+	}
+}
+
+func newPostgresDB() {
 	once.Do(func() {
 		var err error
 		db, err = sql.Open("postgres", "postgresql://"+
@@ -31,7 +50,7 @@ func NewPostgresDB() {
 }
 
 // NewMySqlDB connection to MySQL
-func NewMySqlDB() {
+func newMySqlDB() {
 	once.Do(func() {
 		var err error
 		db, err = sql.Open("mysql", "root:root@tcp(localhost:3306)/db_practice?charset=utf8&parseTime=true")
@@ -64,4 +83,16 @@ func timeToNull(t time.Time) sql.NullTime {
 		null.Valid = true
 	}
 	return null
+}
+
+// DAOProduct factory of product.Storage
+func DAOProduct(driver Driver) (product.Storage, error) {
+	switch driver {
+	case Postgres:
+		return newPsqlProduct(db), nil
+	case MySQL:
+		return newMySQLProduct(db), nil
+	default:
+		return nil, fmt.Errorf("driver not implemented")
+	}
 }
